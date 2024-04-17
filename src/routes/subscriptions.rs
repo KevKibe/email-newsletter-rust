@@ -23,10 +23,13 @@ pub async fn subscribe(
         form.name,
         Utc::now()
     )
-    .execute(&pool.get_ref())
+    .execute(pool.as_ref())
     .await
     {
-        Ok(_) => HttpResponse::Ok().finish(),
+        Ok(result) => match result.rows_affected() {
+            0 => HttpResponse::InternalServerError().finish(),
+            _ => HttpResponse::Ok().finish(),
+        },
         Err(e) => {
             println!("Failed to execute query: {}", e);
             HttpResponse::InternalServerError().finish()
